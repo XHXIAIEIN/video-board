@@ -191,7 +191,8 @@ const LAYER_META = {
 function updateCapToggles(layer) {
   const en = $("#tog-en"), zh = $("#tog-zh");
   const c = state.caps[layer];
-  const hide = layer === 1;         // 重要时刻 (L1) has no captions to toggle
+  // 重要时刻 (L1) has no captions; no-zh leaves only 原文 → nothing to toggle either
+  const hide = layer === 1 || $("#app").classList.contains("no-zh");
   $("#cap-toggles").hidden = hide;  // hide the whole group + its label together
   $("#cap-label").hidden = hide;
   en.hidden = hide;
@@ -826,16 +827,40 @@ function applyComponentVisibility() {
     cues.every((c, i) => c.start === segments[i].start && c.end === segments[i].end);
   const layerCount = 1 + (hasChapters ? 1 : 0) + (sameL2L3 ? 0 : 1); // L3 always + maybe L1/L2
 
+  // no-zh — no usable 译文 at all (import without a zh track, or YouTube +
+  //         machine-translate both came up empty). Collapse every 译文 affordance
+  //         so the card shows only 原文 instead of a dangling empty row.
+  const hasZh = segments.some((s) => s.zh && s.zh.trim());
+
   app.classList.toggle("no-chapters", !hasChapters);
   app.classList.toggle("no-heatmap", !hasHeatmap);
   app.classList.toggle("same-l2l3", sameL2L3);
   app.classList.toggle("solo-layer", layerCount <= 1);
+  app.classList.toggle("no-zh", !hasZh);
 
   $("#layer-switch button[data-layer='1']").hidden = !hasChapters;
   $("#layer-switch button[data-layer='2']").hidden = sameL2L3;
 
+  // Reset per-project caption defaults so switching projects in-session doesn't
+  // carry stale toggles, then collapse every 译文 affordance when there's no zh.
+  state.sideText = "both";
+  state.caps[2].en = true; state.caps[2].zh = false;
+  state.caps[3].en = true; state.caps[3].zh = true;
+  if (!hasZh) {
+    state.sideText = "en";              // transcript: lock to 原文
+    state.caps[2].zh = false;
+    state.caps[3].zh = false;           // cards: nothing to overlay, keep 原文
+  }
+  document.querySelectorAll("#side-text button").forEach((b) =>
+    b.classList.toggle("active", b.dataset.text === state.sideText));
+
   setSidePanel(hasChapters ? "chapters" : "transcript");
   if (state.layer === 1 || (state.layer === 2 && sameL2L3)) setLayer(3);
+
+  // caps / no-zh class are finalized only now, after setLayer() already rendered
+  // the strip + cap toggles once — refresh both so they reflect the final state.
+  updateCapToggles(state.layer);
+  renderFilmstrip();
 }
 
 // Load the bundled example — a tiny original bilingual story that ships in the

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Storyboard — The Future of Programming</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='3' fill='%230a84ff'/><path d='M5 4.5v7l6-3.5z' fill='white'/></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app" hidden>
+
+  <header id="topbar">
+    <button id="toggle-sidebar" class="icon-btn" title="收起 / 展开章节面板 (B)" aria-label="章节面板">
+      <svg viewBox="0 0 16 16"><path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v9A1.5 1.5 0 0 1 12.5 14h-9A1.5 1.5 0 0 1 2 12.5v-9zm1.5-.5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5H6V3H3.5zM7 3v10h5.5a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5H7z"/></svg>
+    </button>
+    <button id="toggle-bottom" class="icon-btn" title="收起 / 展开底部面板 (V)" aria-label="底部面板">
+      <svg viewBox="0 0 16 16"><path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v9A1.5 1.5 0 0 1 12.5 14h-9A1.5 1.5 0 0 1 2 12.5v-9zm1.5-.5a.5.5 0 0 0-.5.5V9h10V3.5a.5.5 0 0 0-.5-.5h-9zM13 10H3v2.5a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5V10z"/></svg>
+    </button>
+    <div id="title">The Future of Programming<span>Bret Victor · 1973</span></div>
+    <button id="btn-import" class="text-btn" title="导入本地视频与字幕">导入</button>
+    <div id="timecode"><b>00:00</b> / 00:00</div>
+  </header>
+
+  <aside id="sidebar">
+    <div id="side-head">
+      <nav id="side-switch" aria-label="侧栏视图">
+        <button data-panel="chapters" class="active">重要时刻</button>
+        <button data-panel="transcript">字幕</button>
+      </nav>
+      <nav id="side-text" aria-label="字幕语言" hidden>
+        <button data-text="en">原文</button>
+        <button data-text="zh">译文</button>
+        <button data-text="both" class="active">双语</button>
+      </nav>
+    </div>
+    <div id="side-scroll">
+      <div id="chapter-list"></div>
+      <div id="transcript-list" hidden></div>
+    </div>
+    <button id="side-reset" hidden title="回到播放位置">↓ 回到播放位置</button>
+  </aside>
+
+  <main id="viewer">
+    <div id="stage">
+      <video id="video" preload="auto"></video>
+      <div id="captions">
+        <span class="line en"></span>
+        <span class="line zh"></span>
+      </div>
+    </div>
+    <div id="seg-progress" title="当前片段进度 — 点击或拖动定位">
+      <div id="seg-buffer"></div>
+      <div id="seg-fill"></div>
+      <div id="seg-knob"></div>
+    </div>
+    <div id="transport">
+      <button id="btn-prev" title="上一段 ←">
+        <svg viewBox="0 0 16 16"><path d="M3.5 2.5a.75.75 0 0 1 .75.75v4.1l8.1-4.86A.75.75 0 0 1 13.5 3.14v9.72a.75.75 0 0 1-1.15.64L4.25 8.65v4.1a.75.75 0 0 1-1.5 0V3.25a.75.75 0 0 1 .75-.75z"/></svg>
+      </button>
+      <button id="btn-play" title="播放 / 暂停 (空格)">
+        <svg id="ic-play" viewBox="0 0 16 16"><path d="M4.5 2.69a.8.8 0 0 1 1.22-.68l8.5 5.31a.8.8 0 0 1 0 1.36l-8.5 5.31a.8.8 0 0 1-1.22-.68V2.69z"/></svg>
+        <svg id="ic-pause" viewBox="0 0 16 16" style="display:none"><path d="M4 2.75A.75.75 0 0 1 4.75 2h1.5a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1-.75-.75V2.75zm5 0A.75.75 0 0 1 9.75 2h1.5a.75.75 0 0 1 .75.75v10.5a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1-.75-.75V2.75z"/></svg>
+      </button>
+      <button id="btn-next" title="下一段 →">
+        <svg viewBox="0 0 16 16"><path d="M12.5 2.5a.75.75 0 0 0-.75.75v4.1L3.65 2.49a.75.75 0 0 0-1.15.65v9.72a.75.75 0 0 0 1.15.64l8.1-4.85v4.1a.75.75 0 0 0 1.5 0V3.25a.75.75 0 0 0-.75-.75z"/></svg>
+      </button>
+      <span class="spacer"></span>
+      <button id="btn-loop" title="循环当前段 (L)">
+        <svg viewBox="0 0 16 16"><path d="M8 3a5 5 0 0 0-5 5 .75.75 0 0 1-1.5 0A6.5 6.5 0 0 1 12.79 3.7l.71-.7a.6.6 0 0 1 1.02.42V6.4a.6.6 0 0 1-.6.6h-2.98a.6.6 0 0 1-.42-1.02l1.2-1.2A4.98 4.98 0 0 0 8 3zm5.75 4.25a.75.75 0 0 1 .75.75A6.5 6.5 0 0 1 3.21 12.3l-.71.7a.6.6 0 0 1-1.02-.42V9.6a.6.6 0 0 1 .6-.6h2.98a.6.6 0 0 1 .42 1.02l-1.2 1.2A5 5 0 0 0 13 8a.75.75 0 0 1 .75-.75z"/></svg>
+      </button>
+      <span id="unit-label"></span>
+    </div>
+  </main>
+
+  <section id="bottom">
+    <div id="timeline">
+      <svg id="heatmap" preserveAspectRatio="none"></svg>
+      <div id="chapter-band"></div>
+      <div id="unit-band"></div>
+      <div id="playhead"></div>
+    </div>
+    <div id="strip-bar">
+      <span id="view-label" class="strip-label">视图</span>
+      <nav id="layer-switch" aria-label="分段视图">
+        <button data-layer="1">重要时刻<span class="key">1</span></button>
+        <button data-layer="2">字幕轴<span class="key">2</span></button>
+        <button data-layer="3" class="active">语义段<span class="key">3</span></button>
+      </nav>
+      <span id="cap-label" class="strip-label">卡片</span>
+      <span id="cap-toggles" aria-label="卡片文字">
+        <button id="tog-en" class="pill" title="卡片显示原文">原文</button>
+        <button id="tog-zh" class="pill" title="卡片显示译文">译文</button>
+      </span>
+      <span id="strip-meta"></span>
+    </div>
+    <div id="strip-wrap">
+      <div id="filmstrip"></div>
+      <button id="reset-left" class="reset-arrow" hidden title="回到播放位置">
+        <svg viewBox="0 0 16 16"><path d="M10.5 3.2a.75.75 0 0 1 0 1.06L6.56 8.2l3.94 3.94a.75.75 0 1 1-1.06 1.06l-4.47-4.47a.75.75 0 0 1 0-1.06l4.47-4.47a.75.75 0 0 1 1.06 0z"/></svg>
+      </button>
+      <button id="reset-right" class="reset-arrow" hidden title="回到播放位置">
+        <svg viewBox="0 0 16 16"><path d="M5.5 3.2a.75.75 0 0 0 0 1.06L9.44 8.2 5.5 12.14a.75.75 0 1 0 1.06 1.06l4.47-4.47a.75.75 0 0 0 0-1.06L6.56 3.2a.75.75 0 0 0-1.06 0z"/></svg>
+      </button>
+    </div>
+  </section>
+
+</div>
+  <div id="landing" hidden>
+    <button id="landing-close" class="icon-btn" title="返回" hidden aria-label="返回">
+      <svg viewBox="0 0 16 16"><path d="M4.3 4.3a1 1 0 0 1 1.4 0L8 6.6l2.3-2.3a1 1 0 1 1 1.4 1.4L9.4 8l2.3 2.3a1 1 0 0 1-1.4 1.4L8 9.4l-2.3 2.3a1 1 0 0 1-1.4-1.4L6.6 8 4.3 5.7a1 1 0 0 1 0-1.4z"/></svg>
+    </button>
+    <div id="drop" tabindex="0">
+      <div class="drop-inner">
+        <svg class="drop-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10m0 0 3.5-3.5M12 13l-3.5-3.5M5 16v2.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V16"/></svg>
+        <h1>分镜故事板</h1>
+        <p class="lead">拖入视频与字幕，或选择文件 / 文件夹开始</p>
+        <div class="actions">
+          <button id="pick-files" class="primary">选择文件</button>
+          <button id="pick-folder">选择文件夹</button>
+        </div>
+        <p class="note">视频 <code>mp4 / webm / mkv / mov</code> ＋ 字幕 <code>vtt / srt</code> · 全部在本机处理，不上传</p>
+        <button id="load-demo" class="linkish">加载示例：一颗种子的攀爬（双语短片）</button>
+        <p id="landing-err" class="err" role="alert"></p>
+      </div>
+    </div>
+    <input id="files-input" type="file" multiple accept="video/*,.vtt,.srt,.ass,.ssa" hidden>
+    <input id="folder-input" type="file" webkitdirectory hidden>
+  </div>
+
+<script src="app.js"></script>
+<script src="import.js"></script>
+</body>
+</html>

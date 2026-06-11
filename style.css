@@ -1,0 +1,771 @@
+/* Storyboard — study tool for one talk. Dark studio theme, Apple HIG idiom. */
+
+:root {
+  --bg-window: #161617;
+  --bg-panel: #1d1d1f;
+  --bg-elevated: #28282a;
+  --bg-control: #2c2c2e;
+  --bg-control-active: #48484a;
+  --separator: rgba(255, 255, 255, 0.08);
+  --text-primary: #f5f5f7;
+  --text-secondary: #98989d;
+  --text-tertiary: #636366;
+  --accent: #0a84ff;
+  --accent-soft: rgba(10, 132, 255, 0.22);
+  --font-ui: -apple-system, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI",
+    "PingFang SC", "Microsoft YaHei UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--text-primary);
+  background: var(--bg-window);
+  overflow: hidden;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  display: grid;
+  grid-template-rows: 44px 1fr auto;
+  grid-template-columns: 280px 1fr;
+  grid-template-areas:
+    "topbar topbar"
+    "sidebar viewer"
+    "bottom bottom";
+  height: 100%;
+}
+#app[hidden] { display: none; } /* beats #app{display:grid} so the attr actually hides it */
+
+/* ---------- Top bar ---------- */
+#topbar {
+  grid-area: topbar;
+  display: grid;
+  grid-template-columns: auto auto 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--separator);
+}
+
+.text-btn {
+  height: 26px;
+  padding: 0 12px;
+  border: 1px solid var(--separator);
+  border-radius: 7px;
+  background: var(--bg-control);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.text-btn:hover { background: var(--bg-control-active); border-color: var(--accent); }
+
+/* ---------- landing / import screen ---------- */
+#landing {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg-window);
+}
+#landing[hidden] { display: none; }
+
+#landing-close[hidden] { display: none; } /* beats .icon-btn{display:flex} */
+#landing-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+#drop {
+  width: min(560px, 100%);
+  border: 1.5px dashed var(--separator);
+  border-radius: 18px;
+  background: var(--bg-panel);
+  padding: 48px 40px;
+  text-align: center;
+  transition: border-color 0.15s, background 0.15s;
+  outline: none;
+}
+#drop.dragover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.drop-inner { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.drop-icon {
+  width: 46px; height: 46px;
+  fill: none; stroke: var(--accent); stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+#drop h1 { margin: 4px 0 0; font-size: 22px; font-weight: 600; }
+#drop .lead { margin: 0; font-size: 14px; color: var(--text-secondary); }
+#drop .actions { display: flex; gap: 12px; margin: 6px 0 2px; }
+#drop .actions button {
+  height: 34px; padding: 0 18px; border-radius: 9px;
+  font: inherit; font-size: 13px; cursor: pointer;
+  border: 1px solid var(--separator); background: var(--bg-control); color: var(--text-primary);
+  transition: background 0.15s, border-color 0.15s;
+}
+#drop .actions button:hover { background: var(--bg-control-active); }
+#drop .actions button.primary { background: var(--accent); border-color: transparent; color: #fff; }
+#drop .actions button.primary:hover { filter: brightness(1.1); }
+#drop .note {
+  margin: 2px 0 0; font-size: 12px; line-height: 1.6; color: var(--text-tertiary);
+}
+#drop .note code {
+  font-family: var(--font-mono); font-size: 11px;
+  background: var(--bg-control); padding: 1px 5px; border-radius: 4px;
+}
+.linkish {
+  margin-top: 8px;
+  background: none; border: none; cursor: pointer;
+  font: inherit; font-size: 13px; color: var(--accent);
+}
+.linkish:hover { text-decoration: underline; }
+#drop .err { margin: 4px 0 0; min-height: 16px; font-size: 12px; color: #ff453a; }
+#drop.busy { opacity: 0.6; pointer-events: none; }
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.icon-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
+.icon-btn svg { width: 16px; height: 16px; fill: currentColor; }
+#app.sidebar-collapsed #toggle-sidebar { color: var(--text-tertiary); }
+
+/* collapse the chapter panel so the viewer spans full width */
+#app.sidebar-collapsed {
+  grid-template-columns: 0 1fr;
+}
+#app.sidebar-collapsed #sidebar {
+  display: none;
+}
+
+/* collapse the bottom panel (timeline + filmstrip) so the viewer gets the height */
+#app.bottom-collapsed {
+  grid-template-rows: 44px 1fr 0;
+}
+#app.bottom-collapsed #bottom {
+  display: none;
+}
+#app.bottom-collapsed #toggle-bottom { color: var(--text-tertiary); }
+
+#title {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#title span { color: var(--text-tertiary); font-weight: 400; margin-left: 8px; }
+
+/* HIG segmented control — view switch, lives in the bottom strip bar */
+#layer-switch {
+  display: flex;
+  background: var(--bg-control);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+#layer-switch button {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  padding: 4px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+#layer-switch button:hover { color: var(--text-primary); }
+#layer-switch button.active {
+  background: var(--bg-control-active);
+  color: var(--text-primary);
+  font-weight: 590;
+}
+#layer-switch button .key {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-left: 5px;
+}
+
+#timecode {
+  justify-self: end;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+#timecode b { color: var(--text-primary); font-weight: 500; }
+
+/* ---------- Sidebar: chapter outline ---------- */
+#sidebar {
+  grid-area: sidebar;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--separator);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* the actual scroll container; #side-head stays pinned above it as a flex sibling */
+#side-scroll {
+  position: relative;
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 0 8px;
+}
+
+/* floating snap-back button — mirrors the filmstrip's reset arrows */
+#side-reset {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  padding: 5px 12px;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  font-weight: 590;
+  color: #fff;
+  background: var(--accent);
+  border: 0;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  z-index: 3;
+}
+#side-reset:hover { filter: brightness(1.08); }
+#side-reset[hidden] { display: none; }
+
+/* sticky header: panel switch (重要时刻 / 字幕) + language选择 */
+#side-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--separator);
+}
+#side-switch, #side-text {
+  display: flex;
+  background: var(--bg-control);
+  border-radius: 7px;
+  padding: 2px;
+  gap: 2px;
+}
+#side-switch button, #side-text button {
+  flex: 1;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+  padding: 4px 0;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+#side-switch button:hover, #side-text button:hover { color: var(--text-primary); }
+#side-switch button.active, #side-text button.active {
+  background: var(--bg-control-active);
+  color: var(--text-primary);
+  font-weight: 590;
+}
+#side-text[hidden] { display: none; }
+#transcript-list[hidden], #chapter-list[hidden] { display: none; }
+#chapter-list { padding-top: 8px; }
+
+/* transcript lines */
+.tx-line {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 8px;
+  padding: 7px 14px 7px 12px;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+}
+.tx-line:hover { background: rgba(255, 255, 255, 0.04); }
+.tx-line.current {
+  background: rgba(255, 255, 255, 0.06);
+  border-left-color: var(--accent);
+}
+.tx-line .time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+.tx-line .tx-text { min-width: 0; }
+.tx-line .tx-text .en {
+  display: block;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+.tx-line .tx-text .zh {
+  display: block;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+.tx-line .tx-text .en + .zh { margin-top: 2px; }
+.chapter-item {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  gap: 8px;
+  align-items: baseline;
+  padding: 7px 14px 7px 12px;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+}
+.chapter-item:hover { background: rgba(255, 255, 255, 0.04); }
+.chapter-item.current {
+  background: rgba(255, 255, 255, 0.06);
+  border-left-color: var(--accent);
+}
+.chapter-item .num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-align: right;
+}
+.chapter-item .name { min-width: 0; }
+.chapter-item .name .en {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chapter-item .time {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+/* ---------- Viewer ---------- */
+#viewer {
+  grid-area: viewer;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #000;
+}
+#stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#video {
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* YouTube-style caption overlay: EN above, ZH below */
+#captions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 5.5%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 0 6%;
+  pointer-events: none;
+  text-align: center;
+}
+#captions .line {
+  display: inline-block;
+  max-width: 92%;
+  background: rgba(8, 8, 8, 0.75);
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 2px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+#captions .en {
+  font-size: clamp(13px, 1.55vw, 19px);
+  font-weight: 400;
+}
+#captions .zh {
+  font-size: clamp(14px, 1.7vw, 21px);
+  font-weight: 500;
+}
+#captions .line:empty { display: none; }
+
+/* Segment progress bar — scrubs within the current unit (full-bleed track) */
+#seg-progress {
+  position: relative;
+  height: 14px;
+  flex: 0 0 auto;
+  background: var(--bg-panel);
+  cursor: pointer;
+}
+#seg-progress::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 4px;
+  margin-top: -2px;
+  background: rgba(255, 255, 255, 0.14);
+  transition: height 0.12s, margin-top 0.12s;
+}
+#seg-buffer { display: none; }
+#seg-fill {
+  position: absolute;
+  left: 0; top: 50%;
+  width: 0;
+  height: 4px;
+  margin-top: -2px;
+  background: rgba(255, 255, 255, 0.42);
+  transition: height 0.12s, margin-top 0.12s;
+}
+#seg-progress:hover #seg-fill { background: rgba(255, 255, 255, 0.62); }
+#seg-knob {
+  position: absolute;
+  left: 0; top: 50%;
+  width: 10px; height: 10px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  transform: scale(0);
+  transition: transform 0.12s;
+}
+#seg-progress:hover #seg-knob { transform: scale(1); }
+#seg-progress:hover::before,
+#seg-progress:hover #seg-fill { height: 6px; margin-top: -3px; }
+
+/* Transport controls */
+#transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 48px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--separator);
+}
+#transport button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 30px;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+#transport button:hover { background: var(--bg-elevated); }
+#transport button svg { width: 16px; height: 16px; fill: currentColor; }
+#transport button.on { color: var(--accent); background: var(--accent-soft); }
+#transport .spacer { width: 18px; }
+#unit-label {
+  position: absolute;
+  right: 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+#transport { position: relative; }
+
+/* ---------- Bottom: timeline + filmstrip ---------- */
+#bottom {
+  grid-area: bottom;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--separator);
+}
+
+#timeline {
+  position: relative;
+  height: 64px;
+  margin: 8px 14px 2px;
+  cursor: crosshair;
+}
+#heatmap { position: absolute; inset: 0 0 34px 0; width: 100%; height: 30px; }
+
+/* hide components whose data is absent/redundant, and reclaim the space.
+   timeline bands are bottom-anchored, so a shorter #timeline collapses the top. */
+#app.no-heatmap #heatmap { display: none; }
+#app.no-chapters #chapter-band { display: none; }
+#app.no-chapters #side-switch { display: none; }
+#app.same-l2l3 #layer-switch button[data-layer="2"] { display: none; }
+#app.solo-layer #layer-switch,
+#app.solo-layer #view-label { display: none; }
+#app.no-heatmap #timeline { height: 34px; }
+#app.no-chapters #timeline { height: 46px; }
+#app.no-heatmap.no-chapters #timeline { height: 16px; }
+#heatmap polygon { fill: rgba(255, 255, 255, 0.14); }
+#heatmap polyline { fill: none; stroke: rgba(255, 255, 255, 0.30); stroke-width: 1; }
+
+#chapter-band {
+  position: absolute;
+  left: 0; right: 0; bottom: 16px;
+  height: 16px;
+}
+#chapter-band .block {
+  position: absolute;
+  top: 0; bottom: 0;
+  background: var(--bg-elevated);
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+}
+#chapter-band .block:hover { background: #3a3a3c; }
+#chapter-band .block.current { background: #3a3a3c; box-shadow: inset 0 0 0 1px rgba(255,255,255,.18); }
+
+#unit-band {
+  position: absolute;
+  left: 0; right: 0; bottom: 4px;
+  height: 8px;
+}
+#unit-band .block {
+  position: absolute;
+  top: 0; bottom: 0;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+}
+#unit-band .block.current { background: var(--accent); }
+
+#playhead {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+}
+#playhead::after {
+  content: "";
+  position: absolute;
+  top: -1px; left: -3px;
+  border: 3px solid transparent;
+  border-top-color: rgba(255, 255, 255, 0.7);
+}
+
+/* Strip bar: view switch + current-view meta, sitting above the filmstrip */
+#strip-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px 2px;
+}
+#strip-bar .strip-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+/* same grouped segmented idiom as #layer-switch, so the two read as one toolbar
+   (multi-select rather than single-select, but visually consistent) */
+#cap-label { margin-left: 4px; }
+#cap-toggles {
+  display: flex;
+  background: var(--bg-control);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+#cap-toggles .pill {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  padding: 4px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+#cap-toggles .pill:hover { color: var(--text-primary); }
+/* on = quiet neutral fill — readable but doesn't pull focus from the video/timeline */
+#cap-toggles .pill.on {
+  background: var(--bg-control-active);
+  color: var(--text-primary);
+  font-weight: 590;
+}
+#cap-toggles[hidden], #cap-label[hidden] { display: none; }
+#cap-toggles .pill[hidden] { display: none; }
+
+#strip-meta {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-left: auto;
+}
+#strip-meta b { color: var(--text-secondary); font-weight: 500; }
+
+#strip-wrap { position: relative; }
+
+/* edge arrows shown after the user scrolls away from the playing card */
+.reset-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(40, 40, 42, 0.92);
+  border: 1px solid var(--separator);
+  border-radius: 50%;
+  color: var(--text-primary);
+  cursor: pointer;
+  z-index: 5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  transition: background 0.15s, border-color 0.15s;
+}
+.reset-arrow svg { width: 16px; height: 16px; fill: currentColor; }
+.reset-arrow:hover { background: var(--accent); border-color: var(--accent); }
+.reset-arrow[hidden] { display: none; }
+#reset-left { left: 8px; }
+#reset-right { right: 8px; }
+
+#filmstrip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  overflow-x: auto;
+  /* fixed height = tallest card (bilingual, 168px) + vertical padding (18) + scrollbar (10),
+     so switching views never resizes the strip — shorter cards just leave space below */
+  height: 196px;
+  padding: 6px 14px 12px;
+  box-sizing: border-box;
+  cursor: grab;
+}
+#filmstrip.dragging { cursor: grabbing; scroll-behavior: auto; }
+
+.card {
+  flex: 0 0 auto;
+  width: 200px;
+  height: 168px;          /* l3: meta + up to 2+2 bilingual lines */
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  overflow: hidden;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+  transition: outline-color 0.12s;
+}
+.card:hover { background: #323234; }
+.card.current {
+  background: #2c2d31;
+  outline-color: var(--accent);
+}
+.card .meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 7px 5px;
+}
+.card .meta .tc { font-family: var(--font-mono); font-size: 10px; color: var(--text-secondary); }
+.card .meta .idx { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); }
+/* each language clamps on its own line budget — turning one on never truncates the
+   other, and there's no fragile shared webkit-box that leaves a half-line ghost */
+.card .text {
+  padding: 0 7px 6px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  overflow: hidden;
+}
+.card .text .en,
+.card .text .zh {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.card .text .zh { color: var(--text-primary); }
+.card .text .en + .zh, .card .text .zh + .en { margin-top: 2px; }
+
+/* L1 chapter cards: text-only (no thumbnail), prominent chapter title */
+.card.l1 { width: 200px; height: 116px; }
+.card.l1 .text { padding-top: 6px; }
+.card.l1 .text .en { font-weight: 590; color: var(--text-primary); -webkit-line-clamp: 3; }
+
+/* progress as a full-card overlay: the watched portion is veiled left→right,
+   with a bright leading edge standing in for the playhead. width set inline by tick(). */
+.card { position: relative; }
+.card .prog {
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 0;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.08);
+}
+.card.current .prog { background: rgba(255, 255, 255, 0.12); }
+
+/* L2 cue cards: text-only, narrow, shorter (no thumbnail to make room for). */
+.card.cue { width: 200px; height: 116px; }
+/* bilingual cue: original + translation need more vertical room */
+.card.cue-bi { height: 168px; }
+.card.cue .text { padding-top: 6px; min-height: 34px; }
+.card.cue .text .en + .zh, .card.cue .text .zh + .en { margin-top: 3px; }
+
+/* ---------- Immersive scrollbars (thin, trackless, revealed on hover) ---------- */
+* { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+*:hover { scrollbar-color: rgba(255, 255, 255, 0.16) transparent; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: transparent;            /* invisible until the area is hovered */
+  border: 3px solid transparent;     /* padding → a slimmer 4px thumb */
+  border-radius: 8px;
+  background-clip: padding-box;
+  transition: background-color 0.2s;
+}
+:hover::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.16); background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.34); background-clip: padding-box; }
+::-webkit-scrollbar-thumb:active { background: rgba(255, 255, 255, 0.45); background-clip: padding-box; }
+
+#loading {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-window);
+  color: var(--text-tertiary);
+  font-size: 13px;
+  z-index: 10;
+}
